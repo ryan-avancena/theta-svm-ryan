@@ -12,7 +12,7 @@ class TrafficData(BaseModel):
     AHEAD_AADT: float
 
 app = FastAPI()
-model = joblib.load("train_new_svm.py")
+model = joblib.load("traffic_svm_model.pkl")
 
 # 👇 Add CORS middleware
 app.add_middleware(
