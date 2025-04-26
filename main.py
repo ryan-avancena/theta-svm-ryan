@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
 import joblib
@@ -12,6 +13,15 @@ class TrafficData(BaseModel):
 
 app = FastAPI()
 model = joblib.load("traffic_svm_model.pkl")
+
+# 👇 Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 👈 Allow all origins (or ["http://localhost:3000"] to be stricter)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/predict/")
 async def predict_traffic(data: TrafficData):
