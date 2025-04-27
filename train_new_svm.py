@@ -24,17 +24,26 @@ X = np.column_stack([
 def calculate_multiplier(row):
     pm_hour, back_peak, ahead_peak, back_aadt, ahead_aadt = row
     base_multiplier = 1.0
-    
+
+    # Rush hour traffic (4PM–7PM)
     if 16 <= pm_hour <= 19:
         base_multiplier += 0.5
 
+    # Light increase if BACK/AHEAD peak hours are during rush
     if 16 <= back_peak <= 19 or 16 <= ahead_peak <= 19:
         base_multiplier += 0.3
 
-    avg_aadt = (back_aadt + ahead_aadt) / 2
-    base_multiplier += avg_aadt / 200000  # Scale contribution from AADT
+    # ✅ NEW: Middle of the night (11PM–5AM), very low traffic
+    if (23 <= pm_hour <= 24) or (0 <= pm_hour <= 5):
+        base_multiplier -= 0.3  # Decrease traffic multiplier
+        base_multiplier = max(base_multiplier, 1.0)  # Minimum is 1.0, no negative traffic
 
-    return base_multiplier + np.random.normal(0, 0.05)  # Add a little noise
+    # Scale based on AADT (Average Daily Traffic)
+    avg_aadt = (back_aadt + ahead_aadt) / 2
+    base_multiplier += avg_aadt / 200000  # Mild scaling based on traffic volume
+
+    # Add some small noise
+    return base_multiplier + np.random.normal(0, 0.05)
 
 y = np.apply_along_axis(calculate_multiplier, 1, X)
 
