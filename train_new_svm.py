@@ -21,29 +21,30 @@ X = np.column_stack([
 # - Higher AADT = higher multiplier
 # - PM rush hours (4-7pm) = higher multiplier
 
-def calculate_multiplier(row):
-    pm_hour, back_peak, ahead_peak, back_aadt, ahead_aadt = row
+def calculate_multiplier(pm_hour, back_peak_hour, ahead_peak_hour, back_aadt, ahead_aadt):
     base_multiplier = 1.0
 
-    # Rush hour traffic (4PM–7PM)
-    if 16 <= pm_hour <= 19:
-        base_multiplier += 0.5
-
-    # Light increase if BACK/AHEAD peak hours are during rush
-    if 16 <= back_peak <= 19 or 16 <= ahead_peak <= 19:
-        base_multiplier += 0.3
-
-    # ✅ NEW: Middle of the night (11PM–5AM), very low traffic
-    if (23 <= pm_hour <= 24) or (0 <= pm_hour <= 5):
-        base_multiplier -= 0.3  # Decrease traffic multiplier
-        base_multiplier = max(base_multiplier, 1.0)  # Minimum is 1.0, no negative traffic
-
-    # Scale based on AADT (Average Daily Traffic)
+    # AADT scaling (always apply, even if small)
     avg_aadt = (back_aadt + ahead_aadt) / 2
-    base_multiplier += avg_aadt / 200000  # Mild scaling based on traffic volume
+    base_multiplier += avg_aadt / 400000
 
-    # Add some small noise
-    return base_multiplier + np.random.normal(0, 0.05)
+    # Time-based effects
+    if 23 <= pm_hour <= 24 or 0 <= pm_hour <= 5:
+        # Nighttime: reduce traffic by 30%
+        base_multiplier -= 0.3
+    elif 11 <= pm_hour <= 13:
+        # Midday: slight boost
+        base_multiplier += 0.2
+    else:
+        # Otherwise, check for peak hour boost
+        if abs(pm_hour - back_peak_hour) <= 1 or abs(pm_hour - ahead_peak_hour) <= 1:
+            base_multiplier += 0.6
+
+    # Add small Gaussian noise
+    noisy_multiplier = base_multiplier + np.random.normal(0, 0.05)
+
+    # Make sure multiplier is at least 1.0
+    return max(noisy_multiplier, 1.0)
 
 y = np.apply_along_axis(calculate_multiplier, 1, X)
 
