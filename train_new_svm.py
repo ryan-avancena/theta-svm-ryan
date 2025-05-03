@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.svm import SVR  # Support Vector Regression
 from sklearn.model_selection import train_test_split
 import joblib
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # ✅ 1. Create better, more realistic fake data
 
@@ -55,7 +56,21 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 model = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=0.1)
 model.fit(X_train, y_train)
 
-# ✅ 5. Save the model
-joblib.dump(model, "traffic_svm_model.pkl")
+y_pred = model.predict(X_test)
 
-print("✅ New SVM model trained and saved as traffic_svm_model.pkl")
+# Calculate performance metrics
+r2 = r2_score(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+
+# Print results
+print(f"R² Score: {r2:.4f}")
+print(f"MAE: {mae:.4f}")
+print(f"MSE: {mse:.4f}")
+print(f"RMSE: {rmse:.4f}")
+
+# ✅ 5. Save the model
+# joblib.dump(model, "traffic_svm_model.pkl")
+
+# print("✅ New SVM model trained and saved as traffic_svm_model.pkl")

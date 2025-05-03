@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.svm import SVR
 import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
 
 # Load the data
 peak_hours_path = "2022-peak-hours-ca - 2022 Peak Hour Report.csv"
@@ -23,7 +26,8 @@ merged_df = pd.merge(
 
 print(f"Merged {len(merged_df)} rows from Caltrans data.")
 
-# Generate simulation examples
+
+# generate simulation examples
 examples = []
 for _, row in merged_df.iterrows():
     back_aadt = row.get("BACK_AADT", np.nan)
@@ -69,7 +73,6 @@ def calculate_multiplier(pm_hour, back_peak_hour, ahead_peak_hour, back_aadt, ah
     # Add small noise
     return max(base_multiplier + np.random.normal(0, 0.05), 1.0)
 
-# Build feature and label arrays
 X = []
 y = []
 
@@ -88,11 +91,28 @@ for example in examples:
 X = np.array(X)
 y = np.array(y)
 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
 # Train SVM model
 model = SVR(kernel="rbf", C=100, gamma=0.1, epsilon=0.1)
 model.fit(X, y)
 
-# Save the model
-joblib.dump(model, "traffic_svm_model.pkl")
+y_pred = model.predict(X_test)
 
-print("✅ Model trained and saved as traffic_svm_model.pkl")
+# performance metrics
+r2 = r2_score(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+
+# Print results
+print(f"R² Score: {r2:.4f}")
+print(f"MAE: {mae:.4f}")
+print(f"MSE: {mse:.4f}")
+print(f"RMSE: {rmse:.4f}")
+
+
+# Save the model
+# joblib.dump(model, "traffic_svm_model.pkl")
+
+# print("✅ Model trained and saved as traffic_svm_model.pkl")
